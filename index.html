@@ -5,52 +5,16 @@
 <title>PAK MC RUNNER</title>
 
 <style>
-body{
- margin:0;
- background:black;
- overflow:hidden;
- font-family:Arial;
-}
+body{margin:0;overflow:hidden;background:black;font-family:Arial;}
+canvas{display:block;margin:auto;background:black;}
 
-/* ROTATE SCREEN */
 #rotateScreen{
- position:fixed;
- inset:0;
- background:black;
- color:white;
+ position:fixed;inset:0;
+ background:black;color:white;
  display:none;
- align-items:center;
- justify-content:center;
- text-align:center;
- z-index:100;
- font-size:22px;
-}
-
-/* INTRO */
-#intro{
- position:fixed;
- inset:0;
- background:linear-gradient(45deg,#000,#222);
- display:flex;
- flex-direction:column;
- align-items:center;
- justify-content:center;
- color:white;
- z-index:50;
- text-align:center;
-}
-#intro h1{font-size:40px;}
-#intro button{
- padding:12px 30px;
- font-size:18px;
- margin:10px;
-}
-
-/* GAME */
-canvas{
- display:block;
- margin:auto;
- background:#000;
+ align-items:center;justify-content:center;
+ text-align:center;font-size:22px;
+ z-index:200;
 }
 
 #ui{
@@ -61,16 +25,35 @@ canvas{
  z-index:5;
 }
 
+/* INTRO */
+#intro{
+ position:fixed;inset:0;
+ background:linear-gradient(45deg,#000,#222);
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ color:white;
+ text-align:center;
+ z-index:50;
+}
+#intro h1{font-size:36px;}
+#intro button{
+ padding:12px 30px;
+ font-size:18px;
+ margin:10px;
+}
+
 /* OUTRO */
 #outro{
- position:fixed;
- inset:0;
+ position:fixed;inset:0;
  background:rgba(0,0,0,0.95);
  display:none;
  flex-direction:column;
  align-items:center;
  justify-content:center;
  color:white;
+ text-align:center;
  z-index:40;
 }
 #restartBtn{
@@ -81,8 +64,7 @@ canvas{
 
 /* LEVEL COMPLETE */
 #levelComplete{
- position:fixed;
- inset:0;
+ position:fixed;inset:0;
  background:rgba(0,0,0,0.9);
  display:none;
  flex-direction:column;
@@ -102,132 +84,122 @@ canvas{
 <body>
 
 <div id="rotateScreen">
-  🔄 Rotate Your Phone<br><br>
-  Landscape Mode Required (16:9)
+ 🔄 Rotate your phone<br>
+ Landscape (16:9) required
 </div>
 
 <div id="intro">
-  <h1>PAK MC RUNNER 😂</h1>
-  <p>Developed by <b>YUG / SHEEL</b></p>
-  <p>Instagram: <b>@no_enemies_vs</b></p>
-  <button onclick="startGame()">▶ PLAY</button>
+ <h1>PAK MC RUNNER 😂</h1>
+ <p>Developed by <b>YUG / SHEEL</b></p>
+ <p>Instagram: <b>@no_enemies_vs</b></p>
+ <button onclick="startGame()">▶ PLAY</button>
 </div>
 
 <div id="ui">Level: 1 | Score: 0</div>
 
 <div id="outro">
-  <h1>GAME OVER 😂</h1>
-  <p>Tere bas ki nahi hai 😭</p>
-  <button id="restartBtn" onclick="location.reload()">RESTART</button>
+ <h1>GAME OVER 😂</h1>
+ <p>Tere bas ki nahi hai 😭🔥</p>
+ <button id="restartBtn" onclick="location.reload()">RESTART</button>
 </div>
 
 <div id="levelComplete">
-  <h1>LEVEL COMPLETE 🎉</h1>
-  <button onclick="replayLevel()">Replay Level</button>
-  <button onclick="nextLevel()">Next Level</button>
+ <h1>LEVEL COMPLETE 🎉</h1>
+ <button onclick="replayLevel()">Replay Level</button>
+ <button onclick="nextLevel()">Next Level</button>
 </div>
 
 <canvas id="game"></canvas>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
 let gameStarted=false, gameOver=false, levelPaused=false;
 
-/* AUTO 16:9 SIZE */
+/* 16:9 + ROTATE SYSTEM */
 function resize(){
- let w = window.innerWidth;
- let h = window.innerHeight;
- let targetRatio = 16/9;
-
- if(w < h){
+ let w=window.innerWidth;
+ let h=window.innerHeight;
+ if(w<h){
   document.getElementById("rotateScreen").style.display="flex";
  }else{
   document.getElementById("rotateScreen").style.display="none";
  }
-
- if(w/h > targetRatio){
-  canvas.height = h;
-  canvas.width = h * targetRatio;
+ let ratio=16/9;
+ if(w/h>ratio){
+  canvas.height=h;
+  canvas.width=h*ratio;
  }else{
-  canvas.width = w;
-  canvas.height = w / targetRatio;
+  canvas.width=w;
+  canvas.height=w/ratio;
  }
 }
 window.addEventListener("resize",resize);
 resize();
 
-/* INTRO START */
+/* INTRO */
 function startGame(){
  document.getElementById("intro").style.display="none";
  gameStarted=true;
- startSpawn();
+ lastSpawn=0;
 }
 
-/* GAME DATA */
-let player={x:120,y:0,w:40,h:55,vy:0};
-let gravity=0.6, ground;
-let obstacles=[];
-let score=0, level=0;
+/* IMAGES (GitHub friendly paths) */
+let bgImgs=["./a.jpg","./b.jpg","./c.webp","./d.webp","./e.webp"];
+let bg=new Image(); bg.src=bgImgs[0];
+let playerImg=new Image(); playerImg.src="./player.png";
+let obsImg=new Image(); obsImg.src="./hakla.jpg";
 
-/* LEVELS */
+/* AUDIO */
+let jumpSound=new Audio("./audio.mp3");
+let deathSound=document.createElement("video");
+deathSound.src="./Chud_Gayi_Chud_Gayi_Meme_128KBPS.mp4";
+
+/* SHAKE */
+let shakePower=0;
+
+/* LEVEL DATA */
 let levels=[
  {score:0,speed:4,spawn:1200},
  {score:500,speed:6,spawn:900},
- {score:1200,speed:8,spawn:700},
- {score:2200,speed:11,spawn:550}
+ {score:1200,speed:9,spawn:700},
+ {score:2200,speed:12,spawn:550},
+ {score:3500,speed:15,spawn:400}
 ];
 
-/* IMAGES */
-let bgImgs=["a.jpg","b.jpg","c.webp","d.webp","e.webp"];
-let bg=new Image(); bg.src=bgImgs[0];
-let playerImg=new Image(); playerImg.src="player.png";
-let obsImg=new Image(); obsImg.src="hakla.jpg";
+let level=0, score=0;
 
-/* AUDIO */
-let jumpSound=new Audio("audio.mp3");
-let deathSound=document.createElement("video");
-deathSound.src="Chud_Gayi_Chud_Gayi_Meme_128KBPS.mp4";
+/* PLAYER */
+let gravity=0.6;
+let ground=0;
+let player={x:120,y:0,w:40,h:55,vy:0,rotation:0};
 
-/* SPAWN */
-let spawnInterval;
-function startSpawn(){
- clearInterval(spawnInterval);
- spawnInterval=setInterval(spawnObstacle,levels[level].spawn);
-}
-function spawnObstacle(){
- let size=35+Math.random()*25;
- obstacles.push({
-  x:canvas.width,
-  y:ground-size,
-  size:size,
-  speed:levels[level].speed
- });
-}
+/* OBSTACLES */
+let obstacles=[];
+let lastSpawn=0;
 
-/* JUMP */
+/* CONTROLS */
 function jump(){
  if(player.y>=ground){
   player.vy=-13;
   jumpSound.currentTime=0;
   jumpSound.play();
+  shakePower=8;
  }
 }
-document.addEventListener("keydown",e=>{ if(e.key===" ") jump(); });
+document.addEventListener("keydown",e=>{if(e.key===" ") jump();});
 canvas.addEventListener("touchstart",jump);
 
-/* LEVEL SYSTEM */
+/* LEVEL COMPLETE */
 function showLevelComplete(){
  levelPaused=true;
  document.getElementById("levelComplete").style.display="flex";
- clearInterval(spawnInterval);
 }
 function replayLevel(){
- document.getElementById("levelComplete").style.display="none";
  obstacles=[];
  levelPaused=false;
- startSpawn();
+ document.getElementById("levelComplete").style.display="none";
 }
 function nextLevel(){
  if(level<levels.length-1){
@@ -235,13 +207,12 @@ function nextLevel(){
   bg.src=bgImgs[level];
  }
  obstacles=[];
- document.getElementById("levelComplete").style.display="none";
  levelPaused=false;
- startSpawn();
+ document.getElementById("levelComplete").style.display="none";
 }
 
-/* LOOP */
-function update(){
+/* GAME LOOP */
+function update(time){
  if(!gameStarted||gameOver||levelPaused) return;
 
  ground=canvas.height*0.75;
@@ -249,6 +220,18 @@ function update(){
  player.vy+=gravity;
  player.y+=player.vy;
  if(player.y>ground){player.y=ground;player.vy=0;}
+
+ // Spawn (without setInterval = lag kam)
+ if(time-lastSpawn>levels[level].spawn){
+  let size=35+Math.random()*25;
+  obstacles.push({
+   x:canvas.width,
+   y:ground-size,
+   size:size,
+   speed:levels[level].speed+Math.random()*2
+  });
+  lastSpawn=time;
+ }
 
  obstacles.forEach(o=>o.x-=o.speed);
  obstacles=obstacles.filter(o=>o.x+o.size>0);
@@ -263,6 +246,7 @@ function update(){
    document.getElementById("outro").style.display="flex";
    deathSound.currentTime=1.5;
    deathSound.play();
+   shakePower=20;
    setTimeout(()=>{
     document.getElementById("restartBtn").style.display="block";
    },4000);
@@ -280,6 +264,13 @@ function update(){
 }
 
 function draw(){
+ let sx=(Math.random()-0.5)*shakePower;
+ let sy=(Math.random()-0.5)*shakePower;
+ shakePower*=0.9;
+
+ ctx.save();
+ ctx.translate(sx,sy);
+
  ctx.drawImage(bg,0,0,canvas.width,canvas.height);
 
  ctx.fillStyle="#2e7d32";
@@ -290,10 +281,12 @@ function draw(){
  obstacles.forEach(o=>{
   ctx.drawImage(obsImg,o.x,o.y,o.size,o.size);
  });
+
+ ctx.restore();
 }
 
-function loop(){
- update();
+function loop(time){
+ update(time);
  draw();
  requestAnimationFrame(loop);
 }
@@ -302,7 +295,4 @@ loop();
 
 </body>
 </html>
-
-
-
 
